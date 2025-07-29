@@ -1,4 +1,5 @@
 import { BufferGeometry, Material, SkinnedMesh } from "three";
+import * as THREE from "three";
 
 export interface AssetProps {
     url: string,
@@ -58,10 +59,27 @@ export type CustomItemsFull = {
 
 export type CustomItems = CustomItemsFull | CustomItemsIgnore
 
+export interface LobbyState {
+    deltaPosition: THREE.Vector3,
+    deltaRotateY: number
+}
+
+type IsChanged = {
+    isRunning: Boolean,
+    isRotate: Boolean
+}
+
+type deltaValue = {
+    deltaPosition: THREE.Vector3,
+    deltaRotateY: number
+}
+
 
 export interface LobbyMovementState {
-    isRunning: Boolean
-    changeIsRunning: (value: Boolean) => void,
-    currentPostion: [number, number, number],
-    changeCurrentPostion(value: [number, number, number]): void
+
+    isStateChanged: IsChanged,
+    deltaState: LobbyState,
+    changeIsStateChanged: (value: IsChanged) => void,
+    changeDeltaSate: (value: LobbyState) => void,
+    addDeltaSate: (value: deltaValue) => void
 }

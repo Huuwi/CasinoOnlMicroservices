@@ -85,6 +85,11 @@ class SocketServer extends Server {
                 this.socketMap.delete(userMetaData.userId)
                 this.inforMetaDataMap.delete(userMetaData.userId)
             })
+
+            socket.on("movement", (msg) => {
+                console.log(msg)
+            })
+
         });
     }
 

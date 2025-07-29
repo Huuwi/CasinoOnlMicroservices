@@ -1,7 +1,7 @@
 // src/components/Lobby.tsx
 import React, { Suspense, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Environment, OrbitControls } from "@react-three/drei";
+import { Environment } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import Room from "./Room/Room";
 import CharacterController from "./Character/CharacterController";
@@ -9,6 +9,7 @@ import { AxesHelper } from "three";
 import sockets from "../../../socketIo/sockets";
 import { myStore } from "../../../store";
 import { envVars } from "../../../constants";
+import * as THREE from "three"
 
 const Lobby: React.FC = () => {
 
@@ -22,9 +23,17 @@ const Lobby: React.FC = () => {
         const ms = 1000 / fps
 
         const fpsEmitItv = setInterval(() => {
-            const isRunning = myStore.getState().isRunning
-            if (!isRunning) return
-            socketConnected.emit("movement",)
+            const isStateChanged = myStore.getState().isStateChanged
+            const changeDeltaSate = myStore.getState().changeDeltaSate
+
+            // console.log(isStateChanged);
+
+
+            if (!isStateChanged.isRotate && !isStateChanged.isRunning) return
+            socketConnected.emit("movement", {
+                lobbyState: myStore.getState().deltaState
+            })
+            changeDeltaSate({ deltaPosition: new THREE.Vector3(0, 0, 0), deltaRotateY: 0 })
 
         }, ms);
 
@@ -74,7 +83,7 @@ const Lobby: React.FC = () => {
                     <Physics gravity={[0, -9.81, 0]}>
                         <Room url="./room/room.glb" />
                         <Environment preset="apartment" background />
-                        <CharacterController lobbySocket={lobbySocket} />
+                        <CharacterController />
                     </Physics>
                 </Suspense>
 

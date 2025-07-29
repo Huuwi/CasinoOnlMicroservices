@@ -3,22 +3,15 @@ import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
 import * as THREE from "three";
 import MainCharacter from "../../CharacterMix/MainCharacter";
-import type SocketClient from "../../../../socketIo/SocketClient";
 import Helper from "../../../../helper/Helper";
 import { mapZones } from "../../../../constants";
 import { myStore } from "../../../../store";
+import type { LobbyState } from "../../../../types";
 
-type V2 = [number, number]
 type Rect2 = [Function, Function, Function, Function]
 
 
-
-type PropsChaController = {
-    lobbySocket: SocketClient
-}
-
-
-const CharacterController = (props: PropsChaController) => {
+const CharacterController = () => {
     const mainCharRef = useRef<Group>(null);
     const { camera } = useThree();
 
@@ -36,19 +29,31 @@ const CharacterController = (props: PropsChaController) => {
     const min = new THREE.Vector3(-182.875, -0.7867861915018802, -63.65117333491793)
     const max = new THREE.Vector3(177.6934131730098, 122.82035142976031, 303.6165253987978)
 
+
+    const deltaLobbyState = useRef<LobbyState>({
+        deltaPosition: new THREE.Vector3(0, 0, 0),
+        deltaRotateY: 0
+    })
+
+
+
     const lastTransform = useRef({
         position: new THREE.Vector3(),
         rotationY: 0
     });
 
 
-    const changeIsRunning = useMemo(() => {
-        return myStore.getState().changeIsRunning
+    const changeIsStateChanged = useMemo(() => {
+        return myStore.getState().changeIsStateChanged
+    }, [])
+
+    const addDeltaSate = useMemo(() => {
+        return myStore.getState().addDeltaSate
     }, [])
 
 
-    const KeyPressedType = ["w", "a", "s", "d"];
 
+    const KeyPressedType = ["w", "a", "s", "d"];
 
     const rects = useMemo(() => {
         return mapZones.map((zone) => {
@@ -60,7 +65,6 @@ const CharacterController = (props: PropsChaController) => {
     }, [])
 
 
-
     // Xoay camera bằng chuột
     useEffect(() => {
 
@@ -68,13 +72,25 @@ const CharacterController = (props: PropsChaController) => {
             mainCharRef.current.position.set(0, 0, 0);
         }
 
-        const handleMouseDown = (e: MouseEvent) => {
+        const handleMouseDown = (e: MouseEvent) => { // bat dau quay
             isMouseDown.current = true;
             lastMousePos.current = { x: e.clientX, y: e.clientY };
+            const isStateChanged = myStore.getState().isStateChanged
+            changeIsStateChanged({
+                isRotate: true,
+                isRunning: isStateChanged.isRunning
+            })
         };
 
-        const handleMouseUp = () => {
+        const handleMouseUp = () => { // dung quay
             isMouseDown.current = false;
+            // console.log("sumDeltaRotateY : ", deltaLobbyState.current.deltaRotateY)
+            // deltaLobbyState.current.deltaRotateY = 0
+            const isStateChanged = myStore.getState().isStateChanged
+            changeIsStateChanged({
+                isRotate: false,
+                isRunning: isStateChanged.isRunning
+            })
         };
 
         const handleMouseMove = (e: MouseEvent) => {
@@ -128,17 +144,36 @@ const CharacterController = (props: PropsChaController) => {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const keyPressed = e.key.toLocaleLowerCase()
-            if (KeyPressedType.includes(keyPressed)) {
-                changeIsRunning(true)
+            if (KeyPressedType.includes(keyPressed)) { //bat dau di chuyen
+                // console.log("---------------------------------------");
+
                 keysPressed.current[keyPressed] = true
+                const isStateChanged = myStore.getState().isStateChanged
+                changeIsStateChanged({
+                    isRotate: isStateChanged.isRotate,
+                    isRunning: true
+                })
             }
         }
 
         const handleKeyUp = (e: KeyboardEvent) => {
             const keyPressed = e.key.toLocaleLowerCase()
             if (KeyPressedType.includes(keyPressed)) {
-                keysPressed.current[keyPressed] = false
-                changeIsRunning(false)
+                delete keysPressed.current[keyPressed]
+
+
+                //kiem tra nhan vat da ngung di chuyen hay chua => tinh toan sumdelta
+                if (Object.keys(keysPressed.current).length == 0) {  // ngung di chuyen
+                    // console.log("deltaPosition", deltaLobbyState.current.deltaPosition);
+                    // deltaLobbyState.current.deltaPosition = new THREE.Vector3(0, 0, 0)
+                    // console.log("+++++++++++++++++++++++++++++++++++++++++++");
+                    const isStateChanged = myStore.getState().isStateChanged
+                    changeIsStateChanged({
+                        isRotate: isStateChanged.isRotate,
+                        isRunning: false
+                    })
+
+                }
             }
         }
 
@@ -225,13 +260,20 @@ const CharacterController = (props: PropsChaController) => {
             const hasRotated = Math.abs(deltaRotationY) > 0.001;
 
             if (hasMoved || hasRotated) {
-                console.log({
-                    deltaPosition: {
-                        x: deltaPosition.x,
-                        y: deltaPosition.y,
-                        z: deltaPosition.z
-                    },
-                    deltaRotationY: deltaRotationY
+                // console.log({
+                //     deltaPosition: {
+                //         x: deltaPosition.x,
+                //         y: deltaPosition.y,
+                //         z: deltaPosition.z
+                //     },
+                //     deltaRotationY: deltaRotationY
+                // })
+                // tinh toan lai tong so luong postion da thay doi
+                // deltaLobbyState.current.deltaPosition.add(deltaPosition)
+                // deltaLobbyState.current.deltaRotateY += deltaRotationY
+                addDeltaSate({
+                    deltaPosition: deltaPosition,
+                    deltaRotateY: deltaRotationY
                 })
 
                 // Cập nhật lại transform

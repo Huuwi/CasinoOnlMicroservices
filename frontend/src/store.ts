@@ -1,6 +1,7 @@
 import { create, type StateCreator } from 'zustand'
 import { categoriesItems } from './constants'
 import type { MixCharacterState, LobbyMovementState, CustomItems, Item, ItemType, CustomItemsFull } from './types'
+import * as THREE from "three"
 
 function getCustomItemLocal(): CustomItems | null {
     const raw = localStorage.getItem("customItems");
@@ -86,20 +87,33 @@ type Store = MixCharacterState & LobbyMovementState
 
 
 const createLobbyMovementSlice: StateCreator<LobbyMovementState> = (set, get, store) => ({
-    isRunning: false,
-    changeIsRunning: (value) => {
-        set((state) => ({
-            isRunning: value
-        }))
-    },
-    currentPostion: [0, 0, 0],
-    changeCurrentPostion: (postion: [number, number, number]) => {
-        set(() => ({
-            currentPostion: postion
-        }))
-    },
 
-    // currentState: 
+    isStateChanged: {
+        isRunning: false,
+        isRotate: false
+    },
+    deltaState: {
+        deltaPosition: new THREE.Vector3(0, 0, 0),
+        deltaRotateY: 0
+    },
+    changeIsStateChanged: (value) => {
+        set(() => ({
+            isStateChanged: value
+        }))
+    },
+    changeDeltaSate: (value) => {
+        set(() => ({
+            deltaState: value
+        }))
+    },
+    addDeltaSate(value) {
+        set((state) => ({
+            deltaState: {
+                deltaPosition: state.deltaState.deltaPosition.add(value.deltaPosition),
+                deltaRotateY: state.deltaState.deltaRotateY + value.deltaRotateY
+            }
+        }))
+    },
 
 })
 
