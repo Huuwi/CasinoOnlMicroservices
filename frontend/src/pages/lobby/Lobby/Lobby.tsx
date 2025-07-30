@@ -22,16 +22,22 @@ const Lobby: React.FC = () => {
         const fps = envVars.VITE_FPS
         const ms = 1000 / fps
 
+        socketConnected.on("initialSocketId", (msg) => {
+            localStorage.setItem("socketId", msg)
+        })
+
+        socketConnected.on("initialStateOtherPeople", (msg) => {
+            console.log("msg", msg)
+        })
+
         const fpsEmitItv = setInterval(() => {
             const isStateChanged = myStore.getState().isStateChanged
             const changeDeltaSate = myStore.getState().changeDeltaSate
 
-            // console.log(isStateChanged);
-
-
             if (!isStateChanged.isRotate && !isStateChanged.isRunning) return
-            socketConnected.emit("movement", {
-                lobbyState: myStore.getState().deltaState
+            socketConnected.emit("clientMove", {
+                lobbyState: myStore.getState().deltaState,
+                socketId: socketConnected.id
             })
             changeDeltaSate({ deltaPosition: new THREE.Vector3(0, 0, 0), deltaRotateY: 0 })
 
@@ -85,6 +91,7 @@ const Lobby: React.FC = () => {
                         <Environment preset="apartment" background />
                         <CharacterController />
                     </Physics>
+
                 </Suspense>
 
                 {/* <OrbitControls makeDefault /> */}

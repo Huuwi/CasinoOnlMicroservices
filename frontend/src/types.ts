@@ -81,5 +81,6 @@ export interface LobbyMovementState {
     deltaState: LobbyState,
     changeIsStateChanged: (value: IsChanged) => void,
     changeDeltaSate: (value: LobbyState) => void,
-    addDeltaSate: (value: deltaValue) => void
+    addDeltaSate: (value: deltaValue) => void,
+    otherPeopleState: Array<any> // tiep tuc
 }

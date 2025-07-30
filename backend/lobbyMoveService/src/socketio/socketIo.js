@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken")
+const Vector3 = require("@rawify/vector3")
 
 require("dotenv").config({ path: "./.env" })
 
@@ -47,7 +48,7 @@ module.exports = { configSocketIo }
 class SocketServer extends Server {
     socketMap = new Map()
     io
-    inforMetaDataMap = new Map() // emit
+    inforMetaDataMap = new Map() // emit first time user connect
 
     constructor(httpServer, config = configSocketIo) {
         super(httpServer, configSocketIo)
@@ -70,24 +71,41 @@ class SocketServer extends Server {
         })
 
         //handle when socket connect
-        this.on("connect", (socket) => {
-            console.log(socket.id + " connected ");
+        this.on("connect", (socket) => { // frist time one user connected
             const userMetaData = socket.decodeAccessToken
-            this.socketMap.set(userMetaData.userId, socket)
-            this.inforMetaDataMap.set(userMetaData.userId, {
+            this.socketMap.set(socket.id, socket)
+            this.inforMetaDataMap.set(socket.id, {
                 userMetaData,
-                position: [0, 0, 0],
-                socketId: socket.id,
+                position: new Vector3(0, 0, 0),
+                rotateY: 0,
+                userId: userMetaData.userId,
             })
+
+            const initialEmitData = Object.fromEntries(this.inforMetaDataMap);
+            console.log(initialEmitData);
+
+
+            socket.emit("initialStateOtherPeople", initialEmitData)
+            socket.emit("initialSocketId", socket.id)
+
+
+            // console.log("metaData : ", this.inforMetaDataMap)
+            // console.log("socketMap : ", this.socketMap)
+
 
             socket.on("disconnect", () => {
                 console.log(socket.id + " vua ngat ket noi");
-                this.socketMap.delete(userMetaData.userId)
-                this.inforMetaDataMap.delete(userMetaData.userId)
+                this.socketMap.delete(socket.id)
+                this.inforMetaDataMap.delete(socket.id)
             })
 
-            socket.on("movement", (msg) => {
-                console.log(msg)
+            socket.on("clientMove", (msg) => {
+                const { socketId, lobbyState } = msg
+                const inforOwn = this.inforMetaDataMap.get(socketId)
+                inforOwn.position = inforOwn.position.add(lobbyState.deltaPosition)
+                inforOwn.rotateY += msg.lobbyState.deltaRotateY
+                socket.emit("initialStateOtherPeople", initialEmitData)
+
             })
 
         });

@@ -114,6 +114,7 @@ const createLobbyMovementSlice: StateCreator<LobbyMovementState> = (set, get, st
             }
         }))
     },
+    otherPeopleState: []// continue
 
 })
 

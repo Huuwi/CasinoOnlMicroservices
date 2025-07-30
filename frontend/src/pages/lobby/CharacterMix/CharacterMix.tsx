@@ -66,7 +66,6 @@ const CharacterMix = () => {
                     <fog attach={"fog"} args={["#555", 15, 25]} />
 
                     <MainCharacter scale={[0.005, 0.005, 0.005]} />
-                    {/* <GLBModel url="./Assets/Outfit.004.glb" /> */}
 
                 </Canvas>
             </div>
